@@ -1,6 +1,5 @@
 
 # docker.io/vikunja/vikunja:latest
 
-FROM vikunja/vikunja
-
+FROM vikunja/api:latest
 
