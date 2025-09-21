@@ -1,7 +1,3 @@
-database:
-  type: postgres
-  host: postgresql
-  password: ${SERVICE_PASSWORD_POSTGRESQL}
 
 service:
   rootpath: /opt/vikunja
@@ -13,11 +9,6 @@ service:
 sentry:
   enabled: true
   frontendenabled: true
-
-typesense:
-  enabled: true
-  url: ${SERVICE_FQDN_TYPESENSE}
-  apikey: ${TYPESENSE_APIKEY}
 
 mailer:
   enabled: true

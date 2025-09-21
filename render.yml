@@ -4,11 +4,12 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
+      - VIKUNJA_SERVICE_JWTSECRET
+      - VIKUNJA_SERVICE_PUBLICURL
+      - VIKUNJA_DATABASE_PATH
       - SERVICE_FQDN_VIKUNJA
       - SERVICE_PASSWORD_JWTSECRET
-      - SERVICE_PASSWORD_POSTGRESQL
       - 'TIMEZONE=${TIMEZONE-CA}'
-      - TYPESENSE_APIKEY
       - 'SMTP_HOST=${SMTP_HOST-smtp.smtp2go.com}'
       - 'SMTP_PORT=${SMTP_PORT-2525}'
       - SMTP_USER
@@ -21,37 +22,12 @@ services:
       - METRICS_PASSWORD
     volumes:
       - 'vikunja-data:/opt/vikunja/'
+      - ./files:/app/vikunja/files
+      - ./db:/db
     ports:
       - '3456:3456'
-    depends_on:
-      postgresql:
-        condition: service_healthy
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3456']
         
-  postgresql:
-    image: 'postgres:latest'
-    volumes:
-      - 'postgresql-data:/var/lib/postgresql/data'
-    environment:
-      - 'POSTGRES_USER=vikunja'
-      - 'POSTGRES_PASSWORD=${SERVICE_PASSWORD_POSTGRESQL}'
-      - 'POSTGRES_DB=vikunja'
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
-      
-  typesense:
-    image: typesense/typesense:29.0
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8108/health']
-    environment:
-      - 'TYPESENSE_API_KEY=${TYPESENSE_APIKEY}'
-    ports:
-      - "8108:8108"
-    volumes:
-      - 'typesense-data:/data'
-   
 volumes:
   vikunja-data:
-  postgresql-data:
-  typesense-data:
