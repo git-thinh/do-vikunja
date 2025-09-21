@@ -8,14 +8,9 @@ services:
     restart: unless-stopped
 
     environment:
-      VIKUNJA_SERVICE_JWTSECRET: ${JWT_SECRET}
-      VIKUNJA_SERVICE_PUBLICURL: ${VIKUNJA_PUBLIC_URL}
-      VIKUNJA_DATABASE_TYPE: postgres
-      VIKUNJA_DATABASE_USER: vikunja
-      VIKUNJA_DATABASE_PASSWORD: vikunja
-      VIKUNJA_DATABASE_DATABASE: vikunja
-      VIKUNJA_DATABASE_HOST: postgres
-      VIKUNJA__SERVICE_ENABLEREGISTRATION: "false"
+      VIKUNJA_SERVICE_JWTSECRET: super-secure-random-secret
+      VIKUNJA_SERVICE_PUBLICURL: http://127.0.0.1:3456/
+      VIKUNJA_DATABASE_PATH: /db/vikunja.db
 
     volumes:
       - type: volume
@@ -33,66 +28,9 @@ services:
     networks:
       - outband
 
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  postgres:
-    image: postgres:17
-    hostname: postgres
-    container_name: vikunja__postgres
-    restart: unless-stopped
-    
-    environment:
-      POSTGRES_USER: vikunja
-      POSTGRES_PASSWORD: vikunja
-      POSTGRES_DB: vikunja
-
-    volumes:
-      - type: volume
-        source: postgres_data
-        target: /var/lib/postgresql/data
-    
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-    
-    networks:
-      - outband
-
-  cloudflared:
-    image: cloudflare/cloudflared:2025.4.0
-    hostname: cloudflared
-    container_name: vikunja__cloudflared
-    restart: unless-stopped
-
-    environment:
-      TUNNEL_METRICS: 0.0.0.0:9126
-      TUNNEL_LOGFILE: /dev/stdout
-
-    command: tunnel run --token ${TUNNEL_TOKEN}
-
-    deploy:
-      resources:
-        limits:
-          memory: 128m
-
-    networks:
-      - outband
-
 volumes:
   vikunja_files:
     name: vikunja__vikunja_files
-  postgres_data:
-    name: vikunja__postgres_data
 
 networks:
   outband:
