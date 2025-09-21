@@ -1,0 +1,42 @@
+services:
+  vikunja:
+    image: vikunja/vikunja
+    container_name: vikunja
+    env_file:
+      - .env
+    environment:
+      VIKUNJA_SERVICE_PUBLICURL: ${VIKUNJA_SERVICE_PUBLICURL}
+      VIKUNJA_DATABASE_HOST: ${VIKUNJA_DATABASE_HOST}
+      VIKUNJA_DATABASE_TYPE: ${VIKUNJA_DATABASE_TYPE}
+      VIKUNJA_DATABASE_USER: ${VIKUNJA_DATABASE_USER}
+      VIKUNJA_DATABASE_PASSWORD: ${VIKUNJA_DATABASE_PASSWORD}
+      VIKUNJA_DATABASE_DATABASE: ${VIKUNJA_DATABASE_DATABASE}
+      VIKUNJA_SERVICE_JWTSECRET: ${VIKUNJA_SERVICE_JWTSECRET}
+    ports:
+      - "${VIKUNJA_PORT:-3456}:3456"
+    volumes:
+      - ./files:/app/vikunja/files
+      - ./config/config.yml:/etc/vikunja/config.yml
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10
+    container_name: vikunja-db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - ./db:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_USER --password=$$MYSQL_PASSWORD"]
+      interval: 2s
+      start_period: 30s
