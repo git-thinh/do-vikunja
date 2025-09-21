@@ -1,7 +1,6 @@
 
 service:
   rootpath: /opt/vikunja
-  publicurl: ${SERVICE_FQDN_VIKUNJA}
   JWTsecret: ${SERVICE_PASSWORD_JWTSECRET}
   maxitemsperpage: 200
   timezone: ${TIMEZONE}
