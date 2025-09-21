@@ -1,32 +1,99 @@
+version: '3.8'
+
 services:
   vikunja:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: vikunja/vikunja
+    hostname: vikunja
+    container_name: vikunja__vikunja
+    restart: unless-stopped
+
     environment:
-      - VIKUNJA_SERVICE_JWTSECRET
-      - VIKUNJA_DATABASE_PATH
-      - SERVICE_FQDN_VIKUNJA
-      - SERVICE_PASSWORD_JWTSECRET
-      - 'TIMEZONE=${TIMEZONE-CA}'
-      - 'SMTP_HOST=${SMTP_HOST-smtp.smtp2go.com}'
-      - 'SMTP_PORT=${SMTP_PORT-2525}'
-      - SMTP_USER
-      - SMTP_PASSWORD
-      - 'SMTP_AUTHTYPE=${SMTP_AUTHTYPE-plain}'
-      - 'SMTP_FROMEMAIL=${SMTP_FROMEMAIL-vikunja@mail.aquati.cat}'
-      - TODOIST_CLIENTID
-      - TODOIST_CLIENTSECRET
-      - 'METRICS_USERNAME=${METRICS_USERNAME-user}'
-      - METRICS_PASSWORD
+      VIKUNJA_SERVICE_JWTSECRET: ${JWT_SECRET}
+      VIKUNJA_SERVICE_PUBLICURL: ${VIKUNJA_PUBLIC_URL}
+      VIKUNJA_DATABASE_TYPE: postgres
+      VIKUNJA_DATABASE_USER: vikunja
+      VIKUNJA_DATABASE_PASSWORD: vikunja
+      VIKUNJA_DATABASE_DATABASE: vikunja
+      VIKUNJA_DATABASE_HOST: postgres
+      VIKUNJA__SERVICE_ENABLEREGISTRATION: "false"
+
     volumes:
-      - 'vikunja-data:/opt/vikunja/'
-      - ./files:/app/vikunja/files
-      - ./db:/db
-    ports:
-      - '3456:3456'
+      - type: volume
+        source: vikunja_files
+        target: /app/vikunja/files
+
+    expose:
+      - 3456
+
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+    networks:
+      - outband
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17
+    hostname: postgres
+    container_name: vikunja__postgres
+    restart: unless-stopped
+    
+    environment:
+      POSTGRES_USER: vikunja
+      POSTGRES_PASSWORD: vikunja
+      POSTGRES_DB: vikunja
+
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql/data
+    
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3456']
-        
+      test: ["CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    
+    networks:
+      - outband
+
+  cloudflared:
+    image: cloudflare/cloudflared:2025.4.0
+    hostname: cloudflared
+    container_name: vikunja__cloudflared
+    restart: unless-stopped
+
+    environment:
+      TUNNEL_METRICS: 0.0.0.0:9126
+      TUNNEL_LOGFILE: /dev/stdout
+
+    command: tunnel run --token ${TUNNEL_TOKEN}
+
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+    networks:
+      - outband
+
 volumes:
-  vikunja-data:
+  vikunja_files:
+    name: vikunja__vikunja_files
+  postgres_data:
+    name: vikunja__postgres_data
+
+networks:
+  outband:
+    name: vikunja__outband
