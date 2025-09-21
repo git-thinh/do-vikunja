@@ -1,0 +1,52 @@
+database:
+  type: postgres
+  host: postgresql
+  password: ${SERVICE_PASSWORD_POSTGRESQL}
+
+service:
+  rootpath: /opt/vikunja
+  publicurl: ${SERVICE_FQDN_VIKUNJA}
+  JWTsecret: ${SERVICE_PASSWORD_JWTSECRET}
+  maxitemsperpage: 200
+  timezone: ${TIMEZONE}
+
+sentry:
+  enabled: true
+  frontendenabled: true
+
+typesense:
+  enabled: true
+  url: ${SERVICE_FQDN_TYPESENSE}
+  apikey: ${TYPESENSE_APIKEY}
+
+mailer:
+  enabled: true
+  host: ${SMTP_HOST}
+  port: ${SMTP_PORT}
+  authtype: ${SMTP_AUTHTYPE}
+  username: ${SMTP_USER}
+  password: ${SMTP_PASSWORD}
+  fromemail: ${SMTP_FROMEMAIL}
+
+log:
+  level: DEBUG
+  datatbase: stdout
+  events: stdout
+  mail: stdout
+
+files:
+  maxsize: 1000MB
+
+migration:
+  todoist:
+    enable: true
+    clientid: ${TODOIST_CLIENTID}
+    clientsecret: ${TODOIST_CLIENTSECRET}
+
+metrics:
+  enabled: true
+  username: ${METRICS_USERNAME}
+  password: ${METRICS_PASSWORD}
+
+defaultsettings:
+  email_reminders_enabled: true
