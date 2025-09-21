@@ -1,0 +1,53 @@
+services:
+  vikunja:
+    image: vikunja/vikunja:${vikunja_version:-ERROR}
+    environment:
+      VIKUNJA_PUBLIC_PORT: ${VIKUNJA_PUBLIC_PORT}
+      VIKUNJA_SERVICE_PUBLICURL: ${VIKUNJA_SERVICE_PUBLICURL}
+      VIKUNJA_DATABASE_HOST: ${VIKUNJA_DATABASE_HOST}
+      VIKUNJA_DATABASE_PASSWORD: ${VIKUNJA_DATABASE_PASSWORD}
+      VIKUNJA_DATABASE_TYPE: ${VIKUNJA_DATABASE_TYPE}
+      VIKUNJA_DATABASE_USER: ${VIKUNJA_DATABASE_USER}
+      VIKUNJA_DATABASE_DATABASE: ${VIKUNJA_DATABASE_DATABASE}
+      VIKUNJA_SERVICE_JWTSECRET: ${VIKUNJA_SERVICE_JWTSECRET}
+      VIKUNJA_DEFAULTSETTINGS_LANGUAGE: ${VIKUNJA_DEFAULTSETTINGS_LANGUAGE}
+      VIKUNJA_DEFAULTSETTINGS_TIMEZONE: ${VIKUNJA_DEFAULTSETTINGS_TIMEZONE}
+      VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME: ${VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_NAME}
+      VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_EMAIL: ${VIKUNJA_DEFAULTSETTINGS_DISCOVERABLE_BY_EMAIL}
+      VIKUNJA_DEFAULTSETTINGS_OVERDUE_TASKS_REMINDERS_ENABLED: ${VIKUNJA_DEFAULTSETTINGS_OVERDUE_TASKS_REMINDERS_ENABLED}
+      VIKUNJA_DEFAULTSETTINGS_WEEK_START: ${VIKUNJA_DEFAULTSETTINGS_WEEK_START}
+    ports:
+      - ${VIKUNJA_PUBLIC_PORT}:3456
+    volumes:
+      - ./volumes/vikunja/files:/app/vikunja/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - vikunja_network
+
+  postgres:
+    image: postgres:${postgres_version:-ERROR}
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - vikunja_network
+    healthcheck:
+      test: ["CMD-SHELL", "PGUSER=${POSTGRES_USER}", "PGPASSWORD=${POSTGRES_PASSWORD}", "pg_isready", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  vikunja_network:
+    # Explicit configuration of IPAM against use of collisions with
+    # internal 10.x.y.z IPs.
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.240.0/24"
