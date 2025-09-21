@@ -1,38 +1,70 @@
-version: '3.8'
+version: '3'
 
 services:
   vikunja:
     image: vikunja/vikunja
-    hostname: vikunja
-    container_name: vikunja__vikunja
-    restart: unless-stopped
-
     environment:
-      VIKUNJA_CORS_ENABLE: true
-      VIKUNJA_SERVICE_JWTSECRET: super-secure-random-secret
-      VIKUNJA_SERVICE_PUBLICURL: https://do-vikunja-v0a5.onrender.com
-      VIKUNJA_DATABASE_PATH: /db/vikunja.db
+      VIKUNJA_SERVICE_PUBLICURL: ${DOMAIN_NAME}
+      VIKUNJA_DATABASE_HOST: db
+      VIKUNJA_DATABASE_PASSWORD: ${DB_PWD}
+      VIKUNJA_DATABASE_TYPE: mysql
+      VIKUNJA_DATABASE_USER: ${DB_USER}
+      VIKUNJA_DATABASE_DATABASE: vikunja
+      VIKUNJA_SERVICE_JWTSECRET: ${JWTSECRET}
 
-    volumes:
-      - type: volume
-        source: vikunja_files
-        target: /app/vikunja/files
+      VIKUNJA_SERVICE_ENABLETASKATTACHMENTS: 1
+      VIKUNJA_SERVICE_ENABLEREGISTRATION: 0
+      VIKUNJA_SERVICE_ENABLEEMAILREMINDERS: 1
 
-    expose:
-      - 3456
+      VIKUNJA_MAILER_ENABLED: 1
+      VIKUNJA_MAILER_FORCESSL: 1
+      VIKUNJA_MAILER_HOST: ${MAILER_HOST}
+      VIKUNJA_MAILER_PORT: 465
+      VIKUNJA_MAILER_USERNAME: ${MAILER_USERNAME}
+      VIKUNJA_MAILER_PASSWORD: ${MAILER_PWD}
 
-    deploy:
-      resources:
-        limits:
-          memory: 512m
-
+    volumes: 
+      - ./files:/app/vikunja/files
     networks:
-      - outband
+      - proxy
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
 
-volumes:
-  vikunja_files:
-    name: vikunja__vikunja_files
+      - "traefik.http.routers.vikunja.entrypoints=web"
+      - "traefik.http.routers.vikunja.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.vikunja.middlewares=secureHeaders@file"
+
+        ## HTTP Routers
+      - "traefik.http.routers.vikunja-secure.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.vikunja-secure.entrypoints=websecure"
+        #      - "traefik.http.routers.vikunja-secure.service=vikunja"
+      - "traefik.http.routers.vikunja-secure.tls.certResolver=letsencrypt"
+
+  
+  db:
+    image: mariadb:10
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PWD} 
+      DB_ROOT_PWD: ${DB_ROOT_PWD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${DB_PWD}
+      MYSQL_DATABASE: vikunja
+    volumes:
+      - ./db:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u $$MYSQL_USER --password=$$MYSQL_PASSWORD"]
+      interval: 2s
+      start_period: 30s
 
 networks:
-  outband:
-    name: vikunja__outband
+  proxy:
+    name: proxy
+    external: true
