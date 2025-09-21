@@ -8,8 +8,9 @@ services:
     restart: unless-stopped
 
     environment:
+      VIKUNJA_CORS_ENABLE: true
       VIKUNJA_SERVICE_JWTSECRET: super-secure-random-secret
-      VIKUNJA_SERVICE_PUBLICURL: http://127.0.0.1:3456/
+      VIKUNJA_SERVICE_PUBLICURL: https://do-vikunja-v0a5.onrender.com
       VIKUNJA_DATABASE_PATH: /db/vikunja.db
 
     volumes:
