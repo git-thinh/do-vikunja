@@ -5,7 +5,6 @@ services:
       dockerfile: Dockerfile
     environment:
       - VIKUNJA_SERVICE_JWTSECRET
-      - VIKUNJA_SERVICE_PUBLICURL
       - VIKUNJA_DATABASE_PATH
       - SERVICE_FQDN_VIKUNJA
       - SERVICE_PASSWORD_JWTSECRET
