@@ -1,1 +1,0 @@
-FROM vikunja/vikunja:0.24
